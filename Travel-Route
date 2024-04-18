@@ -1,0 +1,177 @@
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.InputMismatchException;
+import java.util.List;
+import java.util.Scanner;
+import java.util.Set;
+
+class City {
+    int id;
+    List<Integer> roadConnections;
+    int aerialConnection;
+
+    public City(int id) {
+        this.id = id;
+        this.roadConnections = new ArrayList<>();
+        this.aerialConnection = -1; // -1 indicates no aerial connection
+    }
+}
+
+class Traveler {
+    // Method to calculate the minimum days required to reach the destination
+    public static int planJourney(List<City> cities, int start, int destination) {
+        int days = 1;
+        int citiesTraveled = 0;
+        int currentCity = start;
+
+        Set<Integer> visitedCities = new HashSet<>();
+        visitedCities.add(start);
+
+        while (currentCity != destination) {
+            try {
+                // If an aerial connection is available and not exceeded the limit, take it
+                if (cities.get(currentCity).aerialConnection != -1 && citiesTraveled < 6) {
+                    currentCity = cities.get(currentCity).aerialConnection;
+                    visitedCities.add(currentCity);
+                    if (currentCity != destination) {
+                        days++;
+                    } else {
+                        break;
+                    }
+                } else {
+                    // Otherwise, find the next road city
+                    int nextCity = getNextRoadCity(cities, currentCity, destination, visitedCities);
+                    visitedCities.add(nextCity);
+                    citiesTraveled++;
+                    currentCity = nextCity;
+                }
+
+                // Reset counter if aerial limit is reached or if using an aerial route
+                if (citiesTraveled == 6 || (cities.get(currentCity).aerialConnection != -1 && citiesTraveled > 0)) {
+                    citiesTraveled = 0;
+                }
+            } catch (Exception e) {
+                System.out.println("An error occurred: " + e.getMessage());
+                e.printStackTrace();
+            }
+        }
+
+        return days;
+    }
+
+    // Method to get the next road city based on certain conditions
+    private static int getNextRoadCity(List<City> cities, int currentCity, int destination, Set<Integer> visitedCities) {
+        List<Integer> roadConnections = cities.get(currentCity).roadConnections;
+
+        // Special case for aerial connection - prefer cities with lower indices
+        if (cities.get(currentCity).aerialConnection != -1 &&
+                cities.get(currentCity).aerialConnection < currentCity) {
+            return roadConnections.stream()
+                    .filter(city -> city < currentCity && !visitedCities.contains(city))
+                    .findFirst()
+                    .orElse(roadConnections.get(0));
+        }
+
+        // Otherwise, choose the next unvisited road city
+        for (int nextCity : roadConnections) {
+            if (nextCity != destination && !visitedCities.contains(nextCity)) {
+                return nextCity;
+            }
+        }
+        return destination;
+    }
+}
+
+public class Main {
+
+    public static void main(String[] args) {
+        Scanner scanner = new Scanner(System.in);
+
+        try {
+            int testCases;
+            System.out.print("_____________________________\n ");
+            System.out.print("DSA END SEMESTER PROJECT 2024\n ");
+            System.out.print("_____________________________\n ");
+            System.out.print("CS221180 MUHAMMAD ABDULLAH    \n ");
+            System.out.print("______________________________ \n");
+
+            // Input for the number of test cases
+            do {
+                System.out.print("Enter the number of test cases: ");
+                testCases = getIntInput(scanner);
+            } while (testCases <= 0);
+
+            for (int t = 1; t <= testCases; t++) {
+                int totalCities;
+                // Input for the total number of cities
+                do {
+                    System.out.print("Enter the total number of cities: ");
+                    totalCities = getIntInput(scanner);
+                } while (totalCities <= 0);
+
+                // Create a list of cities
+                List<City> cities = new ArrayList<>();
+                for (int i = 0; i < totalCities + 1; i++) {
+                    cities.add(new City(i));
+                }
+
+                // Connect cities with road connections
+                for (int i = 0; i < totalCities - 1; i++) {
+                    cities.get(i).roadConnections.add(i + 1);
+                }
+
+                int startCity;
+                // Input for the start city
+                do {
+                    System.out.print("Enter the start city: ");
+                    startCity = getIntInput(scanner);
+                } while (startCity < 0 || startCity >= totalCities);
+
+                int destinationCity;
+                // Input for the destination city
+                do {
+                    System.out.print("Enter the destination city: ");
+                    destinationCity = getIntInput(scanner);
+                } while (destinationCity < 0 || destinationCity > totalCities || destinationCity == startCity);
+
+                int numAerialRoutes;
+                // Input for the number of aerial routes
+                do {
+                    System.out.print("Enter the number of aerial routes: ");
+                    numAerialRoutes = getIntInput(scanner);
+                } while (numAerialRoutes < 0);
+
+                // Input for aerial routes and update the cities accordingly
+                for (int i = 0; i < numAerialRoutes; i++) {
+                    System.out.print("Enter aerial route " + (i + 1) + " (cityIndex aerialConnection): ");
+                    int cityIndex;
+                    int aerialConnection;
+                    do {
+                        cityIndex = getIntInput(scanner);
+                        aerialConnection = getIntInput(scanner);
+                    } while (cityIndex < 0 || cityIndex >= totalCities || aerialConnection < 0 || aerialConnection >= totalCities);
+
+                    cities.get(cityIndex).aerialConnection = aerialConnection;
+                }
+
+                // Calculate and display the minimum days required to reach the destination
+                int minDays = Traveler.planJourney(cities, startCity, destinationCity);
+                System.out.println("Total days required to reach destination for Test Case " + t + ": " + minDays);
+            }
+        } catch (Exception e) {
+            System.out.println("An unexpected error occurred: " + e.getMessage());
+            e.printStackTrace();
+        } finally {
+            scanner.close();
+        }
+    }
+
+    // Method to get integer input from the user
+    private static int getIntInput(Scanner scanner) {
+        while (!scanner.hasNextInt()) {
+            System.out.println("Invalid input. Please enter a valid integer.");
+            scanner.next(); // consume the invalid input
+        }
+        return scanner.nextInt();
+    }
+}
